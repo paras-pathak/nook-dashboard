@@ -8,7 +8,7 @@
 <title>Home</title>
 <style>
 *{margin:0;padding:0;-webkit-box-sizing:border-box;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{width:100%;height:100%;overflow:hidden;position:fixed;background:#fff;color:#000;font-family:Arial,sans-serif;font-size:16px;}
+html,body{width:100%;height:100%;overflow:hidden;position:fixed;background:#fff;color:#000;font-family:Arial Narrow,Arial,sans-serif;font-size:16px;}
 @media screen and (orientation:portrait){body{-webkit-transform:rotate(90deg);transform:rotate(90deg);-webkit-transform-origin:left top;transform-origin:left top;width:100vh;height:100vw;position:absolute;top:100%;left:0;}}
 
 .view{position:fixed;top:0;left:0;width:100%;height:100%;display:none;background:#fff;overflow:hidden;}
@@ -24,13 +24,13 @@ html,body{width:100%;height:100%;overflow:hidden;position:fixed;background:#fff;
 .ico svg{display:block;width:100%;height:100%;}
 
 /* ── HOME ── */
-#home-hdr{height:96px;text-align:center;padding:12px 8px 10px;border-bottom:2px solid #000;cursor:pointer;}
+#home-hdr{height:112px;text-align:center;padding:12px 8px 10px;border-bottom:2px solid #000;cursor:pointer;}
 #home-hdr:active{background:#f5f5f5;}
-#clock{font-size:58px;font-weight:900;line-height:1;letter-spacing:-2px;}
-#clock sup{font-size:20px;font-weight:400;vertical-align:top;margin-top:6px;display:inline-block;}
-#cal{font-size:14px;color:#666;margin-top:5px;letter-spacing:1px;}
+#clock{font-size:64px;font-weight:900;line-height:1;letter-spacing:-2px;}
+#clock sup{font-size:22px;font-weight:400;vertical-align:top;margin-top:8px;display:inline-block;}
+#cal{font-size:17px;color:#666;margin-top:6px;letter-spacing:1px;}
 
-#home-body{position:absolute;top:96px;left:0;right:0;bottom:0;
+#home-body{position:absolute;top:112px;left:0;right:0;bottom:0;
   display:-webkit-box;display:flex;-webkit-box-orient:horizontal;-webkit-box-direction:normal;}
 #home-left{width:50%;border-right:2px solid #000;padding:16px 14px;overflow:hidden;}
 #home-right{width:50%;padding:14px 14px;overflow:hidden;
@@ -42,8 +42,8 @@ html,body{width:100%;height:100%;overflow:hidden;position:fixed;background:#fff;
   border:2px solid #000;height:232px;padding-top:52px;
   text-align:center;cursor:pointer;}
 .dcard:active,.dcard.on{background:#000;color:#fff;}
-.dcard-name{font-size:15px;font-weight:700;line-height:1.25;margin-top:8px;padding:0 4px;word-wrap:break-word;overflow-wrap:break-word;}
-.dcard-st{font-size:12px;color:#888;margin-top:4px;}
+.dcard-name{font-size:18px;font-weight:700;line-height:1.2;margin-top:8px;padding:0 4px;word-wrap:normal;overflow-wrap:normal;overflow:hidden;}
+.dcard-st{font-size:14px;color:#888;margin-top:4px;}
 .dcard.on .dcard-st{color:#bbb;}
 
 /* Weather summary — two equal parallel panels */
@@ -53,20 +53,20 @@ html,body{width:100%;height:100%;overflow:hidden;position:fixed;background:#fff;
 .wx-panel:active{opacity:0.7;}
 #wx-sep{width:1px;background:#ccc;margin:8px 0;}
 #h-wx-icon{width:28px;height:28px;display:inline-block;vertical-align:middle;margin-right:3px;}
-.wx-big{font-size:46px;font-weight:900;line-height:1;letter-spacing:-2px;display:block;margin-top:4px;}
-.wx-unit{font-size:18px;font-weight:400;color:#555;}
-.wx-sub{font-size:12px;color:#666;margin-top:5px;}
+.wx-big{font-size:52px;font-weight:700;line-height:1;letter-spacing:-1px;display:block;margin-top:4px;}
+.wx-unit{font-size:20px;font-weight:400;color:#555;}
+.wx-sub{font-size:15px;color:#666;margin-top:5px;}
 
 /* Scenes */
 #sc-section{-webkit-box-flex:1;flex:1;overflow:hidden;}
-.sc-lbl{font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#999;margin-bottom:8px;}
+.sc-lbl{font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#999;margin-bottom:8px;}
 #scene-grid{overflow:hidden;}
 .sc-tile{float:left;width:47%;margin-right:6%;margin-bottom:7px;
   border:2px solid #000;padding:10px 10px 9px;cursor:pointer;}
 .sc-tile:nth-child(2n){margin-right:0;}
 .sc-tile:active{background:#000;color:#fff;}
-.sc-tile-ico{width:20px;height:20px;display:block;margin-bottom:5px;}
-.sc-tile-name{display:block;font-size:14px;font-weight:700;line-height:1.25;word-wrap:break-word;overflow-wrap:break-word;}
+.sc-tile-ico{width:24px;height:24px;display:block;margin-bottom:6px;}
+.sc-tile-name{display:block;font-size:19px;font-weight:700;line-height:1.2;word-wrap:break-word;overflow-wrap:break-word;}
 
 /* ── FULLSCREEN (clock & big weather) ── */
 .fs-body{position:absolute;top:0;left:0;right:0;bottom:0;cursor:pointer;
@@ -523,6 +523,14 @@ function poll(){
 initIcons();
 poll();
 setInterval(poll,10000);
+
+// Hide browser address bar by scrolling 1px then back
+window.addEventListener('load',function(){
+  setTimeout(function(){ window.scrollTo(0,1); },200);
+});
+
+// Auto-open clock view on first load
+setTimeout(function(){ go('v-clock'); }, 1500);
 
 // Keep screen awake by playing a silent looping video
 (function(){
