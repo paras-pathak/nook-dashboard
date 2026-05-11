@@ -154,7 +154,7 @@ function readBody(req, maxBytes = 65536) {
 }
 
 const PUBLIC = path.join(__dirname, 'public');
-const MIME = { '.html':'text/html', '.css':'text/css', '.js':'application/javascript', '.json':'application/json' };
+const MIME = { '.html':'text/html', '.css':'text/css', '.js':'application/javascript', '.json':'application/json', '.ttf':'font/truetype', '.woff':'font/woff', '.woff2':'font/woff2' };
 
 // ── Router ────────────────────────────────────────────────────────────────────
 
