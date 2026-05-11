@@ -7,68 +7,87 @@
 <meta name="x5-orientation" content="landscape">
 <title>Home</title>
 <style>
-@font-face{font-family:'RobotoCondensed';src:url('/fonts/RobotoCondensed-Regular.ttf') format('truetype');font-weight:400;font-style:normal;}
-@font-face{font-family:'RobotoCondensed';src:url('/fonts/RobotoCondensed-Bold.ttf') format('truetype');font-weight:700;font-style:normal;}
+@font-face{font-family:'RC';src:url('/fonts/RobotoCondensed-Regular.ttf') format('truetype');font-weight:400;font-style:normal;}
+@font-face{font-family:'RC';src:url('/fonts/RobotoCondensed-Bold.ttf') format('truetype');font-weight:700;font-style:normal;}
+@font-face{font-family:'Bebas';src:url('/fonts/BebasNeue-Regular.ttf') format('truetype');font-weight:400;font-style:normal;}
 *{margin:0;padding:0;-webkit-box-sizing:border-box;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{width:100%;height:100%;overflow:hidden;position:fixed;background:#fff;color:#000;font-family:'RobotoCondensed','Arial Narrow',Arial,sans-serif;font-size:16px;}
+html,body{width:100%;height:100%;overflow:hidden;position:fixed;background:#fff;color:#000;font-family:'RC','Arial Narrow',Arial,sans-serif;font-size:16px;}
 @media screen and (orientation:portrait){body{-webkit-transform:rotate(90deg);transform:rotate(90deg);-webkit-transform-origin:left top;transform-origin:left top;width:100vh;height:100vw;position:absolute;top:100%;left:0;}}
 
 .view{position:fixed;top:0;left:0;width:100%;height:100%;display:none;background:#fff;overflow:hidden;}
 .view.on{display:block;}
 
-.bar{height:44px;border-bottom:2px solid #000;padding:0 16px;
+.bar{height:40px;border-bottom:2px solid #000;padding:0 14px;
   display:-webkit-box;display:flex;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-webkit-box-align:center;align-items:center;}
 .bar-back{font-size:20px;font-weight:700;cursor:pointer;padding:4px 12px 4px 0;}
-.bar-title{-webkit-box-flex:1;flex:1;text-align:center;font-size:13px;letter-spacing:3px;text-transform:uppercase;}
-.bar-spc{width:60px;}
+.bar-title{-webkit-box-flex:1;flex:1;text-align:center;font-size:12px;letter-spacing:3px;text-transform:uppercase;}
+.bar-spc{width:56px;}
 
 .ico{display:inline-block;vertical-align:middle;}
 .ico svg{display:block;width:100%;height:100%;}
 
 /* ── HOME ── */
-#home-hdr{height:112px;text-align:center;padding:12px 8px 10px;border-bottom:2px solid #000;cursor:pointer;}
-#home-hdr:active{background:#f5f5f5;}
-#clock{font-size:64px;font-weight:900;line-height:1;letter-spacing:-2px;}
-#clock sup{font-size:22px;font-weight:400;vertical-align:top;margin-top:8px;display:inline-block;}
-#cal{font-size:17px;color:#666;margin-top:6px;letter-spacing:1px;}
+/* Header: 96px — clock 70px Bebas + date 13px + padding */
+#home-hdr{height:96px;text-align:center;padding:8px 8px 6px;border-bottom:2px solid #000;cursor:pointer;}
+#home-hdr:active{background:#f0f0f0;}
+#clock{font-family:'Bebas','RC',sans-serif;font-size:70px;line-height:1;letter-spacing:3px;}
+#clock sup{font-family:'RC',sans-serif;font-size:20px;font-weight:400;vertical-align:super;margin-left:3px;}
+#cal{font-size:13px;color:#555;margin-top:1px;letter-spacing:2px;text-transform:uppercase;}
 
-#home-body{position:absolute;top:112px;left:0;right:0;bottom:0;
+/* Body fills remaining 504px (600-96) */
+#home-body{position:absolute;top:96px;left:0;right:0;bottom:0;
   display:-webkit-box;display:flex;-webkit-box-orient:horizontal;-webkit-box-direction:normal;}
-#home-left{width:50%;border-right:2px solid #000;padding:16px 14px;overflow:hidden;}
-#home-right{width:50%;padding:14px 14px;overflow:hidden;
-  display:-webkit-box;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-webkit-box-flex:1;}
 
-/* Device grid — 4 cols */
+/* Left 50%: device grid */
+#home-left{width:50%;border-right:2px solid #000;padding:10px 10px 0 10px;overflow:hidden;}
+
+/* Right 50%: weather + scenes */
+#home-right{width:50%;padding:10px 10px 0 10px;overflow:hidden;
+  display:-webkit-box;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;}
+
+/* ── DEVICE GRID — 4 cols × 2 rows ──
+   Inner width = 50%×800 - 20px padding = 400-20 = 380px
+   Body height = 504px, padding top 10px → 494px for grid
+   2 rows + 8px gap: (494-8)/2 = 243px each → use 240px */
 #dev-grid{overflow:hidden;}
 .dcard{float:left;width:23%;margin-right:2%;margin-bottom:8px;
-  border:2px solid #000;height:232px;padding-top:52px;
-  text-align:center;cursor:pointer;}
+  border:2px solid #000;height:220px;
+  text-align:center;cursor:pointer;
+  padding-top:38px;}
 .dcard:active,.dcard.on{background:#000;color:#fff;}
-.dcard-name{font-size:18px;font-weight:700;line-height:1.2;margin-top:8px;padding:0 4px;word-wrap:normal;overflow-wrap:normal;overflow:hidden;}
-.dcard-st{font-size:14px;color:#888;margin-top:4px;}
+.dcard-ico{width:32px;height:32px;display:block;margin:0 auto;}
+.dcard-name{font-family:'Bebas','RC',sans-serif;font-size:22px;letter-spacing:1px;line-height:1.1;margin-top:8px;padding:0 3px;overflow:hidden;}
+.dcard-st{font-size:11px;color:#888;margin-top:5px;letter-spacing:2px;text-transform:uppercase;}
 .dcard.on .dcard-st{color:#bbb;}
 
-/* Weather summary — two equal parallel panels */
-#wx-sum{border-bottom:2px solid #000;margin-bottom:12px;
+/* ── WEATHER SUMMARY ──
+   Height: 116px; 50%×800-20 = 380px wide */
+#wx-sum{height:116px;border-bottom:2px solid #000;
   display:-webkit-box;display:flex;-webkit-box-orient:horizontal;-webkit-box-direction:normal;}
-.wx-panel{-webkit-box-flex:1;flex:1;text-align:center;padding:10px 4px 14px;cursor:pointer;}
-.wx-panel:active{opacity:0.7;}
-#wx-sep{width:1px;background:#ccc;margin:8px 0;}
-#h-wx-icon{width:28px;height:28px;display:inline-block;vertical-align:middle;margin-right:3px;}
-.wx-big{font-size:52px;font-weight:700;line-height:1;letter-spacing:-1px;display:block;margin-top:4px;}
-.wx-unit{font-size:20px;font-weight:400;color:#555;}
-.wx-sub{font-size:15px;color:#666;margin-top:5px;}
+.wx-panel{-webkit-box-flex:1;flex:1;text-align:center;padding:8px 4px 8px;cursor:pointer;}
+.wx-panel:active{opacity:0.6;}
+#wx-sep{width:1px;background:#ddd;margin:6px 0;}
+#h-wx-icon{width:22px;height:22px;display:inline-block;vertical-align:middle;margin-right:2px;}
+.wx-big{font-family:'Bebas','RC',sans-serif;font-size:54px;line-height:1;letter-spacing:2px;display:block;margin-top:2px;}
+.wx-unit{font-family:'RC',sans-serif;font-size:20px;font-weight:400;color:#555;}
+.wx-sub{font-size:12px;color:#666;margin-top:4px;letter-spacing:1px;}
 
-/* Scenes */
-#sc-section{-webkit-box-flex:1;flex:1;overflow:hidden;}
-.sc-lbl{font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#999;margin-bottom:8px;}
-#scene-grid{overflow:hidden;}
-.sc-tile{float:left;width:47%;margin-right:6%;margin-bottom:7px;
-  border:2px solid #000;padding:10px 10px 9px;cursor:pointer;}
+/* ── SCENES ──
+   Remaining after wx-sum (116px) + border (2px): 504-10-118 = 376px
+   padding-top:8, label ~22px+6 = 28px → grid gets 348-8 = 340px
+   2 cols × 3 rows: (340-2×8)/3 = 108px each tile */
+#sc-section{overflow:hidden;padding-top:8px;}
+.sc-lbl{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#bbb;margin-bottom:6px;}
+#scene-grid{font-size:0;}   /* kills inline-block whitespace */
+.sc-tile{display:inline-block;vertical-align:top;font-size:16px;
+  width:44%;margin-right:8%;margin-bottom:8px;
+  border:2px solid #000;height:118px;
+  text-align:center;cursor:pointer;
+  padding-top:18px;}
 .sc-tile:nth-child(2n){margin-right:0;}
 .sc-tile:active{background:#000;color:#fff;}
-.sc-tile-ico{width:24px;height:24px;display:block;margin-bottom:6px;}
-.sc-tile-name{display:block;font-size:19px;font-weight:700;line-height:1.2;word-wrap:break-word;overflow-wrap:break-word;}
+.sc-tile-ico{width:22px;height:22px;display:block;margin:0 auto 8px;}
+.sc-tile-name{display:block;font-family:'Bebas','RC',sans-serif;font-size:22px;letter-spacing:1px;line-height:1;padding:0 4px;}
 
 /* ── FULLSCREEN (clock & big weather) ── */
 .fs-body{position:absolute;top:0;left:0;right:0;bottom:0;cursor:pointer;
@@ -79,61 +98,61 @@ html,body{width:100%;height:100%;overflow:hidden;position:fixed;background:#fff;
   padding:0 12px;}
 .fs-half+.fs-half{border-left:2px solid #000;}
 
-#ck-hour{font-size:240px;font-weight:900;line-height:0.92;letter-spacing:-8px;display:block;}
-#ck-min{font-size:240px;font-weight:900;line-height:0.92;letter-spacing:-8px;display:block;color:#555;}
-#ck-ampm{font-size:22px;font-weight:400;color:#888;margin-top:10px;letter-spacing:4px;text-transform:uppercase;}
-#ck-date-num{font-size:240px;font-weight:900;line-height:0.92;letter-spacing:-6px;display:block;}
-#ck-month{font-size:22px;font-weight:400;color:#444;margin-top:12px;}
-#ck-day{font-size:14px;letter-spacing:4px;text-transform:uppercase;color:#888;margin-top:8px;}
+#ck-hour{font-family:'Bebas','RC',sans-serif;font-size:210px;line-height:0.9;letter-spacing:4px;display:block;}
+#ck-min{font-family:'Bebas','RC',sans-serif;font-size:210px;line-height:0.9;letter-spacing:4px;display:block;color:#555;}
+#ck-ampm{font-size:20px;font-weight:400;color:#888;margin-top:12px;letter-spacing:4px;text-transform:uppercase;}
+#ck-date-num{font-family:'Bebas','RC',sans-serif;font-size:210px;line-height:0.9;letter-spacing:4px;display:block;}
+#ck-month{font-size:20px;font-weight:400;color:#444;margin-top:14px;}
+#ck-day{font-size:13px;letter-spacing:4px;text-transform:uppercase;color:#888;margin-top:8px;}
 
-.bw-num{font-size:240px;font-weight:900;line-height:0.92;letter-spacing:-6px;display:block;}
-.bw-unit{font-size:36px;font-weight:400;color:#555;margin-top:10px;}
-.bw-lbl{font-size:14px;letter-spacing:4px;text-transform:uppercase;color:#888;margin-top:10px;}
+.bw-num{font-family:'Bebas','RC',sans-serif;font-size:210px;line-height:0.9;letter-spacing:4px;display:block;}
+.bw-unit{font-size:32px;font-weight:400;color:#555;margin-top:12px;}
+.bw-lbl{font-size:13px;letter-spacing:4px;text-transform:uppercase;color:#888;margin-top:12px;}
 
 /* ── WEATHER FORECAST ── */
-#v-weather .view-body{position:absolute;top:44px;left:0;right:0;bottom:0;
+#v-weather .view-body{position:absolute;top:40px;left:0;right:0;bottom:0;
   display:-webkit-box;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;overflow:hidden;}
-#wx-cur{height:44%;background:#ebebeb;border-bottom:2px solid #000;padding:14px 18px;overflow:hidden;}
+#wx-cur{height:44%;background:#f4f4f4;border-bottom:2px solid #000;padding:12px 16px;overflow:hidden;}
 #wx-cur-top{display:-webkit-box;display:flex;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-webkit-box-align:center;align-items:center;}
 .wx-cur-info{display:inline-block;vertical-align:middle;}
-#wx-cur-meta{font-size:15px;color:#555;margin-bottom:2px;}
-#wx-cur-cond{font-size:18px;font-weight:700;}
-#wx-cur-temp{font-size:54px;font-weight:900;line-height:1;letter-spacing:-2px;margin-top:4px;}
-#wx-cur-range{font-size:15px;color:#555;margin-top:3px;}
-#wx-cur-stats{margin-top:10px;font-size:14px;color:#444;}
-.wx-stat{display:inline-block;margin-right:18px;margin-bottom:4px;vertical-align:middle;}
+#wx-cur-meta{font-size:14px;color:#555;margin-bottom:2px;}
+#wx-cur-cond{font-size:17px;font-weight:700;}
+#wx-cur-temp{font-size:52px;font-weight:700;line-height:1;letter-spacing:-2px;margin-top:4px;}
+#wx-cur-range{font-size:14px;color:#555;margin-top:2px;}
+#wx-cur-stats{margin-top:8px;font-size:13px;color:#444;}
+.wx-stat{display:inline-block;margin-right:16px;margin-bottom:4px;vertical-align:middle;}
 #wx-fc{overflow-y:auto;position:absolute;top:44%;left:0;right:0;bottom:0;}
-.fc-city{display:-webkit-box;display:flex;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-webkit-box-align:center;align-items:center;padding:12px 16px 10px;border-bottom:1.5px solid #000;}
-.fc-city-name{font-size:18px;font-weight:700;margin-left:8px;}
-.fc-row{display:-webkit-box;display:flex;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-webkit-box-align:center;align-items:center;padding:10px 16px;border-bottom:1px solid #ddd;}
-.fc-day{width:42px;font-size:15px;font-weight:700;}
-.fc-cond{-webkit-box-flex:1;flex:1;font-size:13px;color:#555;margin-left:4px;}
-.fc-temp{font-size:14px;font-weight:700;}
+.fc-city{display:-webkit-box;display:flex;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-webkit-box-align:center;align-items:center;padding:10px 14px 8px;border-bottom:1.5px solid #000;}
+.fc-city-name{font-size:17px;font-weight:700;margin-left:8px;}
+.fc-row{display:-webkit-box;display:flex;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-webkit-box-align:center;align-items:center;padding:9px 14px;border-bottom:1px solid #e0e0e0;}
+.fc-day{width:40px;font-size:14px;font-weight:700;}
+.fc-cond{-webkit-box-flex:1;flex:1;font-size:12px;color:#555;margin-left:4px;}
+.fc-temp{font-size:13px;font-weight:700;}
 
 /* ── CONDITIONS ── */
-#v-cond .view-body{position:absolute;top:44px;left:0;right:0;bottom:0;
+#v-cond .view-body{position:absolute;top:40px;left:0;right:0;bottom:0;
   display:-webkit-box;display:flex;-webkit-box-orient:horizontal;-webkit-box-direction:normal;}
 .ch{-webkit-box-flex:1;flex:1;text-align:center;padding-top:60px;}
 .ch+.ch{border-left:2px solid #000;}
-.ch-num{font-size:100px;font-weight:900;line-height:1;letter-spacing:-4px;}
-.ch-unit{font-size:26px;margin-top:4px;}
-.ch-lbl{font-size:14px;letter-spacing:2px;text-transform:uppercase;color:#555;margin-top:14px;}
+.ch-num{font-family:'Bebas','RC',sans-serif;font-size:110px;line-height:1;letter-spacing:2px;}
+.ch-unit{font-size:24px;margin-top:4px;}
+.ch-lbl{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#555;margin-top:12px;}
 
 /* ── DRAWER ── */
-#overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:50;}
+#overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:50;cursor:pointer;}
 #drawer{display:none;position:fixed;left:0;right:0;bottom:0;background:#fff;
-  border-top:2px solid #000;padding:18px 16px 28px;z-index:51;}
-#d-head{display:-webkit-box;display:flex;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-webkit-box-align:center;align-items:center;-webkit-box-pack:justify;justify-content:space-between;margin-bottom:18px;}
+  border-top:2px solid #000;padding:16px 16px 24px;z-index:51;}
+#d-head{display:-webkit-box;display:flex;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-webkit-box-align:center;align-items:center;-webkit-box-pack:justify;justify-content:space-between;margin-bottom:14px;}
 #d-title{font-size:18px;font-weight:700;}
 #d-close{font-size:26px;font-weight:300;cursor:pointer;background:none;border:none;line-height:1;padding:0 4px;}
-#d-matter{font-size:14px;color:#666;padding:8px 0 4px;}
-.dr{display:-webkit-box;display:flex;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-webkit-box-align:center;align-items:center;margin-bottom:14px;}
+#d-matter{font-size:13px;color:#666;padding:6px 0 4px;}
+.dr{display:-webkit-box;display:flex;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-webkit-box-align:center;align-items:center;margin-bottom:12px;}
 .dr-lbl{width:90px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#777;margin-right:12px;}
-#d-tog{width:80px;height:42px;border:2px solid #000;background:#fff;font-size:13px;font-weight:700;cursor:pointer;}
+#d-tog{width:80px;height:40px;border:2px solid #000;background:#fff;font-size:13px;font-weight:700;cursor:pointer;}
 #d-tog.on{background:#000;color:#fff;}
-.b-dim{width:42px;height:42px;border:2px solid #000;background:#fff;font-size:22px;font-weight:300;cursor:pointer;}
+.b-dim{width:40px;height:40px;border:2px solid #000;background:#fff;font-size:22px;font-weight:300;cursor:pointer;}
 #d-dim{width:52px;text-align:center;font-size:16px;font-weight:700;display:inline-block;vertical-align:middle;}
-.b-col{border:2px solid #000;padding:8px 12px;font-size:11px;font-weight:600;cursor:pointer;background:#fff;margin:0 4px 4px 0;}
+.b-col{border:2px solid #000;padding:7px 11px;font-size:11px;font-weight:600;cursor:pointer;background:#fff;margin:0 4px 4px 0;}
 .b-col.on{background:#000;color:#fff;}
 </style>
 </head>
@@ -437,7 +456,7 @@ function buildDevCards(devs){
   for(i=0;i<devs.length;i++){
     var d=devs[i],m=mid(d.mac);
     h+='<div class="dcard" id="dc-'+m+'" onclick="openDrawer(\''+d.mac+'\')">'
-      +'<span class="ico" style="width:34px;height:34px;display:block;margin:0 auto;">'+S.bulb+'</span>'
+      +'<span class="dcard-ico ico">'+S.bulb+'</span>'
       +'<div class="dcard-name">'+d.name+'</div>'
       +'<div class="dcard-st">--</div>'
       +'</div>';
