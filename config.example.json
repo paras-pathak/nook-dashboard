@@ -1,0 +1,22 @@
+{
+  "port": 3001,
+  "location": { "lat": 0.0000, "lon": 0.0000, "name": "Your City" },
+  "devices": [
+    { "ip": "192.168.1.101", "mac": "AA:BB:CC:DD:EE:01", "name": "Living Room Lamp", "room": "Living Room", "matter": false },
+    { "ip": "192.168.1.102", "mac": "AA:BB:CC:DD:EE:02", "name": "Floor Lamp",       "room": "Living Room", "matter": false }
+  ],
+  "scenes": [
+    {
+      "name": "Lights On",
+      "commands": [{ "room": "Living Room", "state": true, "dimming": 100, "temp": 2700 }]
+    },
+    {
+      "name": "Lights Off",
+      "commands": [{ "room": "Living Room", "state": false }]
+    },
+    {
+      "name": "Everything Off",
+      "commands": [{ "all": true, "state": false }]
+    }
+  ]
+}

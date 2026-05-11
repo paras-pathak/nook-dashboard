@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard Config</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;
+  background:#f5f5f5;color:#111;padding:24px;}
+h1{font-size:20px;margin-bottom:4px;}
+.sub{color:#666;font-size:13px;margin-bottom:28px;}
+h2{font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:#888;margin-bottom:10px;margin-top:28px;}
+hr{border:none;border-top:1.5px solid #ddd;margin-bottom:16px;}
+
+/* Device rows */
+.dev-row{background:#fff;border:1px solid #ddd;border-radius:6px;
+  padding:12px 14px;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.dev-row label{font-size:11px;color:#888;display:block;margin-bottom:3px;}
+.dev-row input,.dev-row select{
+  border:1px solid #ccc;border-radius:4px;padding:6px 8px;font-size:13px;width:100%;}
+.f-name{flex:2;min-width:140px;}
+.f-room{flex:2;min-width:140px;}
+.f-ip  {flex:1;min-width:110px;color:#aaa;}
+.f-ip input{color:#888;background:#fafafa;}
+
+/* Scene rows */
+.scene-row{background:#fff;border:1px solid #ddd;border-radius:6px;
+  padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:center;}
+.scene-row input{border:1px solid #ccc;border-radius:4px;padding:6px 8px;font-size:13px;flex:1;}
+.btn-del{background:none;border:1px solid #ccc;border-radius:4px;
+  padding:6px 10px;cursor:pointer;font-size:13px;color:#c00;flex-shrink:0;}
+.btn-del:hover{background:#fff0f0;}
+
+/* Add scene */
+#add-scene{background:none;border:1.5px dashed #aaa;border-radius:6px;
+  padding:10px;width:100%;font-size:13px;color:#666;cursor:pointer;margin-bottom:4px;}
+#add-scene:hover{background:#f0f0f0;}
+
+/* Rooms helper */
+#rooms-hint{font-size:12px;color:#888;margin-bottom:20px;}
+#rooms-hint span{display:inline-block;background:#eee;border-radius:3px;
+  padding:2px 8px;margin:2px 3px;font-family:monospace;}
+
+/* Save */
+#save-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;
+  border-top:1.5px solid #ddd;padding:14px 24px;display:flex;align-items:center;gap:12px;}
+#btn-save{background:#000;color:#fff;border:none;border-radius:6px;
+  padding:10px 28px;font-size:14px;font-weight:600;cursor:pointer;}
+#btn-save:hover{background:#333;}
+#save-msg{font-size:13px;color:#080;}
+
+.badge{font-size:10px;background:#eee;border-radius:3px;padding:2px 6px;
+  color:#888;margin-left:6px;font-family:monospace;}
+</style>
+</head>
+<body>
+
+<h1>Dashboard Config <a href="/" style="font-size:13px;color:#007aff;text-decoration:none;margin-left:10px;">← Back to dashboard</a></h1>
+<p class="sub">Changes are saved to config.json on the Pi and take effect immediately.</p>
+
+<h2>Devices</h2>
+<hr>
+<p id="rooms-hint">Rooms currently in use: <span id="room-list">...</span></p>
+<div id="dev-list"></div>
+
+<h2>Scenes</h2>
+<hr>
+<div id="scene-list"></div>
+<button id="add-scene" onclick="addScene()">+ Add Scene</button>
+
+<div style="height:70px;"></div>
+
+<div id="save-bar">
+  <button id="btn-save" onclick="save()">Save Changes</button>
+  <span id="save-msg"></span>
+</div>
+
+<script>
+var cfg = { devices:[], scenes:[] };
+
+function g(id){return document.getElementById(id);}
+
+function load(){
+  var x=new XMLHttpRequest();
+  x.open('GET','/api/state',true);
+  x.onreadystatechange=function(){
+    if(x.readyState===4){
+      var data=JSON.parse(x.responseText);
+      cfg.devices=data.config.devices;
+      cfg.scenes=data.config.scenes;
+      render();
+    }
+  };
+  x.send();
+}
+
+function render(){
+  // Devices
+  var dh='';
+  for(var i=0;i<cfg.devices.length;i++){
+    var d=cfg.devices[i];
+    dh+='<div class="dev-row">'
+      +'<div class="f-name"><label>Display Name</label>'
+      +'<input type="text" value="'+esc(d.name)+'" onchange="cfg.devices['+i+'].name=this.value"></div>'
+      +'<div class="f-room"><label>Room</label>'
+      +'<input type="text" value="'+esc(d.room)+'" onchange="cfg.devices['+i+'].room=this.value" placeholder="e.g. Living Room"></div>'
+      +'<div class="f-ip"><label>IP <span class="badge">'+d.mac.slice(-8)+'</span></label>'
+      +'<input type="text" value="'+d.ip+'" readonly></div>'
+      +'</div>';
+  }
+  g('dev-list').innerHTML=dh;
+
+  // Rooms list
+  var rooms={};
+  for(var j=0;j<cfg.devices.length;j++) rooms[cfg.devices[j].room]=1;
+  var rl='';
+  for(var r in rooms) rl+='<span>'+esc(r)+'</span>';
+  g('room-list').innerHTML=rl;
+
+  // Scenes
+  renderScenes();
+}
+
+function renderScenes(){
+  var sh='';
+  for(var i=0;i<cfg.scenes.length;i++){
+    sh+='<div class="scene-row">'
+      +'<input type="text" value="'+esc(cfg.scenes[i].name)+'" placeholder="Scene name" onchange="cfg.scenes['+i+'].name=this.value">'
+      +'<button class="btn-del" onclick="delScene('+i+')">Remove</button>'
+      +'</div>';
+  }
+  g('scene-list').innerHTML=sh;
+}
+
+function addScene(){
+  cfg.scenes.push({name:'New Scene',commands:[{all:true,state:true,dimming:100,temp:4000}]});
+  renderScenes();
+}
+
+function delScene(i){
+  cfg.scenes.splice(i,1);
+  renderScenes();
+}
+
+function save(){
+  g('save-msg').innerHTML='Saving...';
+  var x=new XMLHttpRequest();
+  x.open('POST','/api/admin/config',true);
+  x.setRequestHeader('Content-Type','application/json');
+  x.onreadystatechange=function(){
+    if(x.readyState===4){
+      try{
+        var r=JSON.parse(x.responseText);
+        if(r.ok){g('save-msg').innerHTML='&#10003; Saved';}
+        else{g('save-msg').innerHTML='Error: '+r.error;}
+      }catch(e){g('save-msg').innerHTML='Error saving';}
+      setTimeout(function(){g('save-msg').innerHTML='';},3000);
+    }
+  };
+  x.send(JSON.stringify({devices:cfg.devices,scenes:cfg.scenes}));
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+load();
+</script>
+</body>
+</html>

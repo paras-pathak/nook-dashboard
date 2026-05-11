@@ -1,0 +1,18 @@
+[Unit]
+Description=Nook Dashboard Server
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+WorkingDirectory=/home/YOUR_USERNAME/nook-dashboard
+# ExecStart — use `which node` or `which nodejs` to find the right path on your system
+# Common paths: /usr/bin/node, /usr/local/bin/node, /opt/homebridge/bin/node
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/home/YOUR_USERNAME/nook-dashboard/server.log
+StandardError=append:/home/YOUR_USERNAME/nook-dashboard/server.log
+
+[Install]
+WantedBy=multi-user.target
