@@ -109,6 +109,7 @@ async function fetchWeather() {
       low:       Math.round(d.daily.temperature_2m_min[i]),
       precip:    d.daily.precipitation_probability_max[i] || 0,
       wind:      Math.round(d.daily.wind_speed_10m_max[i] || 0),
+      uv:        Math.round(d.daily.uv_index_max[i] || 0),
     }));
     wx = {
       temp:      Math.round(d.current.temperature_2m),
@@ -154,7 +155,7 @@ function readBody(req, maxBytes = 65536) {
 }
 
 const PUBLIC = path.join(__dirname, 'public');
-const MIME = { '.html':'text/html', '.css':'text/css', '.js':'application/javascript', '.json':'application/json', '.ttf':'font/truetype', '.woff':'font/woff', '.woff2':'font/woff2' };
+const MIME = { '.html':'text/html', '.css':'text/css', '.js':'application/javascript', '.json':'application/json', '.ttf':'application/x-font-truetype', '.woff':'font/woff', '.woff2':'font/woff2' };
 
 // ── Router ────────────────────────────────────────────────────────────────────
 
