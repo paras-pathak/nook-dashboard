@@ -20,7 +20,7 @@ A lightweight smart home dashboard for the **Barnes & Noble Nook Simple Touch (B
 
 **Weather detail** — tap the weather panel for a split view: left panel shows current conditions (date, icon, big temperature, rain/humidity/UV, daily L/H range) on a grey background; right panel shows a 7-day forecast with day, icon, condition and temperature range
 
-<img src="screenshots/3-weather-detail.jpeg" width="480" alt="Weather detail view showing current conditions and 7-day forecast"/>
+<img src="screenshots/3-weather-detail-v2.jpeg" width="480" alt="Weather detail view showing current conditions and 7-day forecast"/>
 
 ---
 
