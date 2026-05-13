@@ -50,6 +50,55 @@ Full credit to both for keeping this ancient hardware alive and useful.
 
 ---
 
+## Prepare the Nook
+
+Do these steps once, right after rooting and connecting ADB. They remove B&N's home app, prevent the screen from ever sleeping, and auto-launch the browser on every boot.
+
+### 1. Remove the B&N home app
+
+The B&N launcher runs its own sleep timer that overrides Android's screen timeout and shows a screensaver. Remove it permanently:
+
+```bash
+adb shell "su -c 'mount -o rw,remount /dev/block/mmcblk0p5 /system \
+  && rm /system/app/Home.apk \
+  && mount -o ro,remount /dev/block/mmcblk0p5 /system'"
+```
+
+Android's stock launcher (`com.android.launcher`) or ADW Launcher take over as fallback — neither interferes with always-on browser use.
+
+### 2. Keep screen on and auto-open browser at boot
+
+Android 2.1 has no `sqlite3` or `content` command to raise the screen timeout beyond 1 hour. The fix is a `userinit.sh` that Android executes on every boot:
+
+- `svc power stayon true` — keeps screen on while charging
+- Kernel wake lock — prevents CPU suspend
+- Periodic touch event every 50 min — resets the screen-off timer before the 1-hour limit fires (handles the battery/unplugged case)
+- `am start` — opens the dashboard in NakedBrowser automatically
+
+```bash
+cat > /tmp/userinit.sh << 'EOF'
+#!/system/bin/sh
+svc power stayon true
+echo "nook-dashboard" > /sys/power/wake_lock
+am start -n com.fevdev.nakedbrowser/.NakedBrowserActivity -d "http://<your-pi-ip>:<port>"
+(while true; do
+  sleep 3000
+  sendevent /dev/input/event2 3 0 10
+  sendevent /dev/input/event2 3 1 790
+  sendevent /dev/input/event2 1 330 1
+  sendevent /dev/input/event2 0 0 0
+  sendevent /dev/input/event2 1 330 0
+  sendevent /dev/input/event2 0 0 0
+done) &
+EOF
+adb push /tmp/userinit.sh /data/local/userinit.sh
+adb shell "su -c 'chmod 755 /data/local/userinit.sh'"
+```
+
+> Replace `<your-pi-ip>:<port>` with your actual server address before pushing.
+
+---
+
 ## What this is
 
 Once rooted, the Nook makes a surprisingly good always-on home dashboard. E-ink draws near-zero power when the image is static, the screen is large enough to read across a room, and the hardware is nearly free second-hand.
@@ -128,41 +177,9 @@ Open `http://<your-pi-ip>:<port>` in a browser to confirm it works.
 
 ### 3. Open on the Nook
 
-Navigate to `http://<your-pi-ip>:<port>` in the Nook's browser.
+If you set up `userinit.sh` above, the browser opens automatically on every boot. Otherwise navigate manually to `http://<your-pi-ip>:<port>` in the Nook's browser.
 
 > Add `?v=1` to the URL (increment each time) if you need to force a cache refresh — the old WebKit caches aggressively.
-
----
-
-## Keeping the Nook awake
-
-The settings UI caps screen timeout at 1 hour. A three-layer approach is needed to prevent the screen ever sleeping:
-
-**1. Max screen timeout via settings DB**
-```bash
-adb shell "su -c 'sqlite3 /data/data/com.android.providers.settings/databases/settings.db \
-  \"UPDATE system SET value=2147483647 WHERE name=\\\"screen_off_timeout\\\";\"'"
-```
-
-**2. Kernel wake lock**
-```bash
-adb shell "su -c 'echo nook-dashboard > /sys/power/wake_lock'"
-```
-
-**3. Disable the B&N screensaver entirely**
-```bash
-adb shell "su -c 'pm disable com.bn.nook.home/com.bn.nook.home.screensaver.ScreensaverService'"
-```
-
-To survive reboots, write a `userinit.sh` (Android 2.1 executes this on boot if present):
-
-```bash
-printf '#!/system/bin/sh\nsvc power stayon true\necho nook-dashboard > /sys/power/wake_lock\npm disable com.bn.nook.home/com.bn.nook.home.screensaver.ScreensaverService\n' > /tmp/userinit.sh
-adb push /tmp/userinit.sh /data/local/userinit.sh
-adb shell "su -c 'chmod 755 /data/local/userinit.sh'"
-```
-
-> **Note:** `svc power stayon true` only works when the device is charging (`mIsPowered`). The kernel wake lock and screensaver disable are needed regardless. Do **not** just rename screensaver image directories — the screensaver Activity may launch with an empty directory and display a permanent blank screen.
 
 ---
 
