@@ -109,7 +109,7 @@ This project gives you:
 - **Live weather** — current conditions + 7-day forecast via Open-Meteo (no API key needed), tap panels to expand; weather detail shows a split layout with big current conditions on the left and the 7-day forecast on the right
 - **Device controls** — per-bulb on/off, brightness, colour temperature, RGB colour via a slide-up drawer; ON state renders in dark grey (not black) to prevent e-ink ghosting
 - **Scenes** — one-tap lighting presets
-- **Fully local** — Pi sends UDP commands directly to WiZ bulbs; no WiZ cloud, no internet required for light control
+- **Fully local** — Pi sends UDP commands directly to WiZ bulbs and Xiaomi/Mi devices; no cloud required for light control
 - **Offline resilience** — if the server goes down, the dashboard automatically switches to the clock view (which keeps ticking client-side) and shows a SERVER OFFLINE badge until it reconnects
 
 ---
@@ -121,6 +121,7 @@ This project gives you:
 | Nook Simple Touch BNRV300 | Android 2.1, 800×600 e-ink, rooted via NookManager |
 | Raspberry Pi Zero 2W | Runs the Node.js server; any Pi or always-on machine works |
 | WiZ smart bulbs | Any WiZ bulb reachable by local IP |
+| Xiaomi / Mi / Yeelight bulbs | Optional; requires `python-miio` on the Pi (see below) |
 
 ---
 
@@ -138,11 +139,34 @@ Edit `config.json`:
 
 - **`port`** — port for the server (default `3001`)
 - **`location`** — your latitude/longitude and city name (used for weather only)
-- **`devices`** — your WiZ bulbs with local IPs and MAC addresses
+- **`devices`** — your bulbs with local IPs and MAC addresses (WiZ and/or Xiaomi)
 - **`scenes`** — lighting presets (see Scene commands below)
 
 > **Finding bulb IPs:** WiZ app → bulb → Device Info, or check your router's DHCP table.
 > Set **static DHCP leases by MAC address** in your router so IPs never change.
+
+#### Xiaomi / Mi / Yeelight devices (optional)
+
+Xiaomi devices use the miio protocol instead of WiZ UDP. Add `"type": "miio"` plus `deviceId` and `token` to their config entry:
+
+```json
+{ "ip": "192.168.1.103", "mac": "AA:BB:CC:DD:EE:03", "name": "Bedside Lamp", "room": "Bedroom",
+  "type": "miio", "deviceId": 123456789, "token": "your32charhextoken0000000000000000" }
+```
+
+The server uses [python-miio](https://github.com/rytilahti/python-miio) to talk to these devices. Install it on your Pi:
+
+```bash
+pip3 install python-miio --break-system-packages
+```
+
+**Finding your token:** The easiest way is [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor) by [@PiotrMachowski](https://github.com/PiotrMachowski) — run it on any machine, log in with your Mi Home credentials, and it prints tokens for all your devices. Full credit to PiotrMachowski for maintaining this tool.
+
+```bash
+git clone https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor.git
+cd Xiaomi-cloud-tokens-extractor && pip3 install -r requirements.txt
+python3 token_extractor.py
+```
 
 ### 2. Run the server
 

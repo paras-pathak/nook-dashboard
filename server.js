@@ -3,8 +3,8 @@
 const http   = require('http');
 const fs     = require('fs');
 const path   = require('path');
-const dgram  = require('dgram');
-const crypto = require('crypto');
+const dgram      = require('dgram');
+const { execFile } = require('child_process');
 
 const CONFIG_PATH = path.join(__dirname, 'config.json');
 let CONFIG = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
@@ -45,91 +45,58 @@ async function getSystemConfig(ip) {
   catch (_) { return null; }
 }
 
-// ── miio (Xiaomi) UDP ─────────────────────────────────────────────────────────
+// ── miio (Xiaomi) via python-miio ─────────────────────────────────────────────
 
-const MIIO_PORT = 54321;
-
-function miioHello() {
-  const buf = Buffer.alloc(32, 0xff);
-  buf.writeUInt16BE(0x2131, 0);
-  buf.writeUInt16BE(32, 2);
-  return buf;
-}
-
-function miioPacket(deviceId, stamp, token, payload) {
-  const tok = Buffer.from(token, 'hex');
-  const key = crypto.createHash('md5').update(tok).digest();
-  const iv  = crypto.createHash('md5').update(key).update(tok).digest();
-  const cipher = crypto.createCipheriv('aes-128-cbc', key, iv);
-  const enc = Buffer.concat([cipher.update(Buffer.from(payload, 'utf8')), cipher.final()]);
-  const len = 32 + enc.length;
-  const hdr = Buffer.alloc(32, 0);
-  hdr.writeUInt16BE(0x2131, 0);
-  hdr.writeUInt16BE(len, 2);
-  hdr.writeUInt32BE(deviceId, 8);
-  hdr.writeUInt32BE(stamp, 12);
-  const chk = crypto.createHash('md5').update(hdr).update(tok).update(enc).digest();
-  chk.copy(hdr, 16);
-  return Buffer.concat([hdr, enc]);
-}
-
-function miioDecrypt(token, payload) {
-  const tok = Buffer.from(token, 'hex');
-  const key = crypto.createHash('md5').update(tok).digest();
-  const iv  = crypto.createHash('md5').update(key).update(tok).digest();
-  const dc  = crypto.createDecipheriv('aes-128-cbc', key, iv);
-  return Buffer.concat([dc.update(payload), dc.final()]).toString('utf8').replace(/\0+$/, '');
-}
-
-function miioSend(ip, deviceId, token, method, params) {
+function miioRun(script) {
   return new Promise((resolve, reject) => {
-    const sock  = dgram.createSocket('udp4');
-    const timer = setTimeout(() => { try { sock.close(); } catch (_) {} reject(new Error('miio timeout')); }, 5000);
-    let gotHello = false;
-    sock.on('message', buf => {
-      try {
-        if (buf.length < 32) return;
-        if (!gotHello) {
-          gotHello = true;
-          const stamp = buf.readUInt32BE(12);
-          const pkt   = miioPacket(deviceId, stamp, token, JSON.stringify({ id: 1, method, params }));
-          sock.send(pkt, MIIO_PORT, ip, err => { if (err) { clearTimeout(timer); try { sock.close(); } catch (_) {} reject(err); } });
-        } else {
-          clearTimeout(timer); try { sock.close(); } catch (_) {}
-          const pktLen = buf.readUInt16BE(2);
-          if (pktLen > 32) {
-            try { resolve(JSON.parse(miioDecrypt(token, buf.slice(32)))); }
-            catch (e) { reject(e); }
-          } else { resolve({}); }
-        }
-      } catch (e) { clearTimeout(timer); try { sock.close(); } catch (_) {} reject(e); }
+    execFile('python3', ['-c', script], { timeout: 8000 }, (err, stdout, stderr) => {
+      if (err) { reject(new Error(stderr || err.message)); return; }
+      try { resolve(JSON.parse(stdout.trim())); }
+      catch (_) { resolve(stdout.trim()); }
     });
-    sock.on('error', err => { clearTimeout(timer); try { sock.close(); } catch (_) {} reject(err); });
-    sock.send(miioHello(), MIIO_PORT, ip, err => { if (err) { clearTimeout(timer); try { sock.close(); } catch (_) {} reject(err); } });
   });
 }
 
 async function miioGetState(dev) {
   try {
-    const r = await miioSend(dev.ip, dev.deviceId, dev.token, 'get_prop', ['power', 'bright', 'ct', 'color_mode']);
-    if (r && r.result) {
-      const [power, bright, ct] = r.result;
-      return { on: power === 'on', dimming: bright || 100, temp: ct || null };
-    }
-  } catch (_) {}
+    const script = `
+import json, sys
+sys.path.insert(0, '/home/paras/.local/lib/python3.11/site-packages')
+from miio import Device
+d = Device('${dev.ip}', '${dev.token}')
+r = d.send('get_prop', ['power', 'bright', 'ct'])
+print(json.dumps({'power': r[0], 'bright': int(r[1]), 'ct': int(r[2])}))
+`;
+    const r = await miioRun(script);
+    if (r && r.power !== undefined)
+      return { on: r.power === 'on', dimming: r.bright || 100, temp: r.ct || null };
+  } catch (e) { console.error(`miioGetState ${dev.ip}: ${e.message}`); }
   return null;
 }
 
 async function miioSetState(dev, params) {
   try {
+    const cmds = [];
     if (params.state !== undefined)
-      await miioSend(dev.ip, dev.deviceId, dev.token, 'set_power', [params.state ? 'on' : 'off', 'smooth', 500]);
-    if (params.r !== undefined && params.g !== undefined && params.b !== undefined)
-      await miioSend(dev.ip, dev.deviceId, dev.token, 'set_rgb', [((params.r & 0xff) << 16) | ((params.g & 0xff) << 8) | (params.b & 0xff), 'smooth', 500]);
-    else if (params.temp !== undefined)
-      await miioSend(dev.ip, dev.deviceId, dev.token, 'set_ct_abx', [params.temp, 'smooth', 500]);
+      cmds.push(`d.send('set_power', ['${params.state ? 'on' : 'off'}'])`);
+    if (params.r !== undefined && params.g !== undefined && params.b !== undefined) {
+      const rgb = ((params.r & 0xff) << 16) | ((params.g & 0xff) << 8) | (params.b & 0xff);
+      cmds.push(`d.send('set_rgb', [${rgb}])`);
+    } else if (params.temp !== undefined) {
+      cmds.push(`d.send('set_ct_abx', [${params.temp}, 'smooth', 500])`);
+    }
     if (params.dimming !== undefined)
-      await miioSend(dev.ip, dev.deviceId, dev.token, 'set_bright', [params.dimming, 'smooth', 500]);
+      cmds.push(`d.send('set_bright', [${params.dimming}])`);
+    if (!cmds.length) return true;
+    const script = `
+import sys
+sys.path.insert(0, '/home/paras/.local/lib/python3.11/site-packages')
+from miio import Device
+d = Device('${dev.ip}', '${dev.token}')
+${cmds.join('\n')}
+print('ok')
+`;
+    await miioRun(script);
     return true;
   } catch (e) { console.error(`miioSetState ${dev.ip}: ${e.message}`); return false; }
 }
