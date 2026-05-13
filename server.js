@@ -1,9 +1,10 @@
 'use strict';
 
-const http  = require('http');
-const fs    = require('fs');
-const path  = require('path');
-const dgram = require('dgram');
+const http   = require('http');
+const fs     = require('fs');
+const path   = require('path');
+const dgram  = require('dgram');
+const crypto = require('crypto');
 
 const CONFIG_PATH = path.join(__dirname, 'config.json');
 let CONFIG = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
@@ -44,14 +45,108 @@ async function getSystemConfig(ip) {
   catch (_) { return null; }
 }
 
+// ── miio (Xiaomi) UDP ─────────────────────────────────────────────────────────
+
+const MIIO_PORT = 54321;
+
+function miioHello() {
+  const buf = Buffer.alloc(32, 0xff);
+  buf.writeUInt16BE(0x2131, 0);
+  buf.writeUInt16BE(32, 2);
+  return buf;
+}
+
+function miioPacket(deviceId, stamp, token, payload) {
+  const tok = Buffer.from(token, 'hex');
+  const key = crypto.createHash('md5').update(tok).digest();
+  const iv  = crypto.createHash('md5').update(key).update(tok).digest();
+  const cipher = crypto.createCipheriv('aes-128-cbc', key, iv);
+  const enc = Buffer.concat([cipher.update(Buffer.from(payload, 'utf8')), cipher.final()]);
+  const len = 32 + enc.length;
+  const hdr = Buffer.alloc(32, 0);
+  hdr.writeUInt16BE(0x2131, 0);
+  hdr.writeUInt16BE(len, 2);
+  hdr.writeUInt32BE(deviceId, 8);
+  hdr.writeUInt32BE(stamp, 12);
+  const chk = crypto.createHash('md5').update(hdr).update(tok).update(enc).digest();
+  chk.copy(hdr, 16);
+  return Buffer.concat([hdr, enc]);
+}
+
+function miioDecrypt(token, payload) {
+  const tok = Buffer.from(token, 'hex');
+  const key = crypto.createHash('md5').update(tok).digest();
+  const iv  = crypto.createHash('md5').update(key).update(tok).digest();
+  const dc  = crypto.createDecipheriv('aes-128-cbc', key, iv);
+  return Buffer.concat([dc.update(payload), dc.final()]).toString('utf8').replace(/\0+$/, '');
+}
+
+function miioSend(ip, deviceId, token, method, params) {
+  return new Promise((resolve, reject) => {
+    const sock  = dgram.createSocket('udp4');
+    const timer = setTimeout(() => { try { sock.close(); } catch (_) {} reject(new Error('miio timeout')); }, 5000);
+    let gotHello = false;
+    sock.on('message', buf => {
+      try {
+        if (buf.length < 32) return;
+        if (!gotHello) {
+          gotHello = true;
+          const stamp = buf.readUInt32BE(12);
+          const pkt   = miioPacket(deviceId, stamp, token, JSON.stringify({ id: 1, method, params }));
+          sock.send(pkt, MIIO_PORT, ip, err => { if (err) { clearTimeout(timer); try { sock.close(); } catch (_) {} reject(err); } });
+        } else {
+          clearTimeout(timer); try { sock.close(); } catch (_) {}
+          const pktLen = buf.readUInt16BE(2);
+          if (pktLen > 32) {
+            try { resolve(JSON.parse(miioDecrypt(token, buf.slice(32)))); }
+            catch (e) { reject(e); }
+          } else { resolve({}); }
+        }
+      } catch (e) { clearTimeout(timer); try { sock.close(); } catch (_) {} reject(e); }
+    });
+    sock.on('error', err => { clearTimeout(timer); try { sock.close(); } catch (_) {} reject(err); });
+    sock.send(miioHello(), MIIO_PORT, ip, err => { if (err) { clearTimeout(timer); try { sock.close(); } catch (_) {} reject(err); } });
+  });
+}
+
+async function miioGetState(dev) {
+  try {
+    const r = await miioSend(dev.ip, dev.deviceId, dev.token, 'get_prop', ['power', 'bright', 'ct', 'color_mode']);
+    if (r && r.result) {
+      const [power, bright, ct] = r.result;
+      return { on: power === 'on', dimming: bright || 100, temp: ct || null };
+    }
+  } catch (_) {}
+  return null;
+}
+
+async function miioSetState(dev, params) {
+  try {
+    if (params.state !== undefined)
+      await miioSend(dev.ip, dev.deviceId, dev.token, 'set_power', [params.state ? 'on' : 'off', 'smooth', 500]);
+    if (params.r !== undefined && params.g !== undefined && params.b !== undefined)
+      await miioSend(dev.ip, dev.deviceId, dev.token, 'set_rgb', [((params.r & 0xff) << 16) | ((params.g & 0xff) << 8) | (params.b & 0xff), 'smooth', 500]);
+    else if (params.temp !== undefined)
+      await miioSend(dev.ip, dev.deviceId, dev.token, 'set_ct_abx', [params.temp, 'smooth', 500]);
+    if (params.dimming !== undefined)
+      await miioSend(dev.ip, dev.deviceId, dev.token, 'set_bright', [params.dimming, 'smooth', 500]);
+    return true;
+  } catch (e) { console.error(`miioSetState ${dev.ip}: ${e.message}`); return false; }
+}
+
 // ── State cache ───────────────────────────────────────────────────────────────
 
 const stateCache = {};
 
 async function pollAll() {
   for (const dev of CONFIG.devices) {
-    const p = await getPilot(dev.ip);
-    if (p) stateCache[dev.mac] = { on: !!p.state, dimming: p.dimming || 100, temp: p.temp || null };
+    if (dev.type === 'miio') {
+      const s = await miioGetState(dev);
+      if (s) stateCache[dev.mac] = s;
+    } else {
+      const p = await getPilot(dev.ip);
+      if (p) stateCache[dev.mac] = { on: !!p.state, dimming: p.dimming || 100, temp: p.temp || null };
+    }
   }
 }
 pollAll();
@@ -174,7 +269,8 @@ const server = http.createServer(async (req, res) => {
     if (!dev) return sendJSON(res, { error:'not found' }, 404);
     let params;
     try { params = JSON.parse(await readBody(req)); } catch (_) { return sendJSON(res, { error:'bad request' }, 400); }
-    await setPilot(dev.ip, params);
+    if (dev.type === 'miio') await miioSetState(dev, params);
+    else await setPilot(dev.ip, params);
     const s = stateCache[mac] || {};
     stateCache[mac] = {
       on:      params.state   !== undefined ? params.state   : s.on,
@@ -199,7 +295,8 @@ const server = http.createServer(async (req, res) => {
       if (cmd.g       !== undefined) params.g       = cmd.g;
       if (cmd.b       !== undefined) params.b       = cmd.b;
       for (const dev of targets) {
-        await setPilot(dev.ip, params);
+        if (dev.type === 'miio') await miioSetState(dev, params);
+        else await setPilot(dev.ip, params);
         const s = stateCache[dev.mac] || {};
         stateCache[dev.mac] = {
           on:      params.state   !== undefined ? params.state   : s.on,

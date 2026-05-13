@@ -2,8 +2,9 @@
   "port": 3001,
   "location": { "lat": 0.0000, "lon": 0.0000, "name": "Your City" },
   "devices": [
-    { "ip": "192.168.1.101", "mac": "AA:BB:CC:DD:EE:01", "name": "Living Room Lamp", "room": "Living Room", "matter": false },
-    { "ip": "192.168.1.102", "mac": "AA:BB:CC:DD:EE:02", "name": "Floor Lamp",       "room": "Living Room", "matter": false }
+    { "ip": "192.168.1.101", "mac": "AA:BB:CC:DD:EE:01", "name": "Living Room Lamp", "room": "Living Room" },
+    { "ip": "192.168.1.102", "mac": "AA:BB:CC:DD:EE:02", "name": "Floor Lamp",       "room": "Living Room" },
+    { "ip": "192.168.1.103", "mac": "AA:BB:CC:DD:EE:03", "name": "Bedside Lamp",     "room": "Bedroom", "type": "miio", "deviceId": 123456789, "token": "your32charhextoken0000000000000000" }
   ],
   "scenes": [
     {
